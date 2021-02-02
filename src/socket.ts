@@ -43,6 +43,7 @@ export class Socket {
 
     public close() {
         this.m_registeredDataPrefix.close();
+        this.m_logic.close();
 
         if (this.m_face.running) {
             this.m_face.removeRoute(this.m_dataPrefix);

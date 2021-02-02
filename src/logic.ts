@@ -37,6 +37,7 @@ export class Logic {
 
     public close() {
         this.m_syncRegisteredPrefix.close();
+        clearTimeout(this.m_retxEvent);
 
         if (this.m_face.running) {
             this.m_face.removeRoute(this.m_syncPrefix);
