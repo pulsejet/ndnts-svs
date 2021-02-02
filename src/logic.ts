@@ -30,11 +30,17 @@ export class Logic {
 
         // Start periodically send sync interest
         this.retxSyncInterest();
+
+        // Terminate if the face closes
+        this.m_face.on("close", () => this.close());
     }
 
     public close() {
         this.m_syncRegisteredPrefix.close();
-        this.m_face.removeRoute(this.m_syncPrefix);
+
+        if (this.m_face.running) {
+            this.m_face.removeRoute(this.m_syncPrefix);
+        }
     }
 
     private async onSyncInterest(interest: Interest) {

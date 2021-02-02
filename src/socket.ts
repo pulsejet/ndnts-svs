@@ -36,11 +36,17 @@ export class Socket {
         // Register data prefix
         this.m_face.addRoute(this.m_dataPrefix);
         this.m_registeredDataPrefix = this.m_endpoint.produce(this.m_dataPrefix, this.onDataInterest);
+
+        // Terminate if the face closes
+        this.m_face.on("close", () => this.close());
     }
 
     public close() {
         this.m_registeredDataPrefix.close();
-        this.m_face.removeRoute(this.m_dataPrefix);
+
+        if (this.m_face.running) {
+            this.m_face.removeRoute(this.m_dataPrefix);
+        }
     }
 
     private async onDataInterest(interest: Interest) {
