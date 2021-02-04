@@ -102,6 +102,7 @@ export class Logic {
         const interest = new Interest(syncName);
         interest.canBePrefix = true;
         interest.mustBeFresh = true;
+        interest.lifetime = 1000;
 
         let data: Data;
         try {
