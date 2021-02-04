@@ -1,5 +1,4 @@
 import { Endpoint, Producer } from "@ndn/endpoint";
-import { FwFace } from "@ndn/fw";
 import { TT, Component, Data, Interest, Name } from "@ndn/packet";
 import { Encoder, NNI } from "@ndn/tlv";
 import { Logic } from "./logic";
@@ -7,46 +6,46 @@ import * as T from './typings';
 
 export class Socket {
     private m_endpoint: Endpoint;
-    private m_syncPrefix: Name;
-    private m_dataPrefix: Name;
     private m_id: T.NodeID;
+    private m_dataPrefix: Name;
     private m_registeredDataPrefix: Producer;
     private m_ims: { [key: string]: Data; } = {};
     private m_logic: Logic;
 
     constructor(
-        syncPrefix: Name,
-        id: T.NodeID,
-        private m_face: FwFace,
-        m_updateCallback: T.UpdateCallback,
+        private opts: T.SVSOptions,
     ) {
         // Bind async functions
         this.onDataInterest = this.onDataInterest.bind(this);
 
         // Initialize
-        this.m_endpoint = new Endpoint({ fw: m_face.fw });
-        this.m_syncPrefix = new Name(syncPrefix).append('s');
-        this.m_dataPrefix = new Name(syncPrefix).append('d');
-        this.m_id = escape(id);
+        this.m_id = escape(opts.id);
+        this.m_endpoint = opts.endpoint || new Endpoint({ fw: opts.face.fw });
+
+        const syncPrefix = new Name(opts.prefix).append('s');
+        this.m_dataPrefix = new Name(opts.prefix).append('d');
 
         // Create Logic
-        this.m_logic = new Logic(
-            this.m_face, this.m_syncPrefix, m_updateCallback, this.m_id);
+        this.m_logic = new Logic({
+            ...opts,
+            prefix: syncPrefix,
+            endpoint: this.m_endpoint,
+        });
 
         // Register data prefix
-        this.m_face.addRoute(this.m_dataPrefix);
+        this.opts.face.addRoute(this.m_dataPrefix);
         this.m_registeredDataPrefix = this.m_endpoint.produce(this.m_dataPrefix, this.onDataInterest);
 
         // Terminate if the face closes
-        this.m_face.on("close", () => this.close());
+        this.opts.face.on("close", () => this.close());
     }
 
     public close() {
         this.m_registeredDataPrefix.close();
         this.m_logic.close();
 
-        if (this.m_face.running) {
-            this.m_face.removeRoute(this.m_dataPrefix);
+        if (this.opts.face.running) {
+            this.opts.face.removeRoute(this.m_dataPrefix);
         }
     }
 

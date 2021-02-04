@@ -1,47 +1,45 @@
-import { FwFace } from "@ndn/fw";
 import { Endpoint, Producer } from "@ndn/endpoint"
-import { Data, Interest, Name } from "@ndn/packet";
+import { Data, Interest } from "@ndn/packet";
 import { VersionVector } from "./version-vector";
 import * as T from './typings';
 
 export class Logic {
     private m_endpoint: Endpoint;
+    private m_id: T.NodeID;
     private m_vv = new VersionVector();
     private m_syncRegisteredPrefix: Producer;
     private m_retxEvent: any = 0;
     private m_nextSyncInterest: number = 0;
 
     constructor (
-        private m_face: FwFace,
-        private m_syncPrefix: Name,
-        private m_onUpdate: T.UpdateCallback,
-        private m_id: T.NodeID
+        private opts: T.SVSOptions,
     ) {
         // Bind async functions
         this.onSyncInterest = this.onSyncInterest.bind(this);
         this.sendSyncInterest = this.sendSyncInterest.bind(this);
 
         // Initialize
-        this.m_vv.set(m_id, 0);
-        this.m_endpoint = new Endpoint({ fw: m_face.fw });
+        this.m_id = escape(opts.id);
+        this.m_vv.set(this.m_id, 0);
+        this.m_endpoint = opts.endpoint || new Endpoint({ fw: opts.face.fw });
 
         // Register sync prefix
-        this.m_face.addRoute(this.m_syncPrefix);
-        this.m_syncRegisteredPrefix = this.m_endpoint.produce(m_syncPrefix, this.onSyncInterest);
+        this.opts.face.addRoute(opts.prefix);
+        this.m_syncRegisteredPrefix = this.m_endpoint.produce(opts.prefix, this.onSyncInterest);
 
         // Start periodically send sync interest
         this.retxSyncInterest();
 
         // Terminate if the face closes
-        this.m_face.on("close", () => this.close());
+        this.opts.face.on("close", () => this.close());
     }
 
     public close() {
         this.m_syncRegisteredPrefix.close();
         clearTimeout(this.m_retxEvent);
 
-        if (this.m_face.running) {
-            this.m_face.removeRoute(this.m_syncPrefix);
+        if (this.opts.face.running) {
+            this.opts.face.removeRoute(this.opts.prefix);
         }
     }
 
@@ -60,7 +58,7 @@ export class Logic {
         }
 
         // Send sync interest if vectors different
-        else if (!false || mergeRes.otherVectorNew) {
+        else if (!this.opts.enableAck || mergeRes.otherVectorNew) {
             const delay = 50 * this.jitter(10);
 
             if (performance.now() + delay < this.m_nextSyncInterest) {
@@ -69,7 +67,7 @@ export class Logic {
         }
 
         // Return reply if my vector is new (and ACK enabled)
-        if (false && mergeRes.myVectorNew) {
+        if (this.opts.enableAck && mergeRes.myVectorNew) {
             const data = new Data(interest.name);
             data.content = this.m_vv.encodeToComponent().tlv;
             data.freshnessPeriod = 4000;
@@ -99,7 +97,7 @@ export class Logic {
     }
 
     private async sendSyncInterest() {
-        const syncName = this.m_syncPrefix.append(this.m_vv.encodeToComponent());
+        const syncName = this.opts.prefix.append(this.m_vv.encodeToComponent());
 
         const interest = new Interest(syncName);
         interest.canBePrefix = true;
@@ -136,7 +134,7 @@ export class Logic {
         }
 
         // Callback if missing data
-        if (missingData.length > 0) this.m_onUpdate(missingData);
+        if (missingData.length > 0) this.opts.update(missingData);
 
         // Check if current version vector has new state
         for (const nid of this.m_vv.getNodes()) {
