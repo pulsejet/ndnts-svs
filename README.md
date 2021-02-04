@@ -14,11 +14,15 @@ To create a new SVS socket
 
 ```typescript
 import { Socket } from 'ndnts-svs';
+import { Name } from '@ndn/packet';
 
 const prefix = new Name('/ndn/svs');
 const nodeId = 'alice';
 
-const sock = new Socket(prefix, nodeId, fwFace, (missingData) => {
+let sock: Socket;
+
+// Missing data callback
+const updateCallback = (missingData) => {
     // For each node with missing data
     for (const m of missingData) {
         // Fetch all new data
@@ -31,5 +35,13 @@ const sock = new Socket(prefix, nodeId, fwFace, (missingData) => {
             });
         }
     }
+};
+
+// Start SVS socket
+sock = new Socket({
+    face: face,
+    prefix: prefix,
+    id: nodeId,
+    update: updateCallback,
 });
 ```
