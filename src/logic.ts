@@ -72,10 +72,14 @@ export class Logic {
         return undefined;
     }
 
-    private retxSyncInterest(send = true) {
+    private retxSyncInterest(send = true, delay = -1) {
         if (send) this.sendSyncInterest();
         clearTimeout(this.m_retxEvent);
-        this.m_retxEvent = setTimeout(this.retxSyncInterest.bind(this), 3000);
+
+        if (delay < 0)
+            delay = 3000 * this.jitter(10);
+
+        this.m_retxEvent = setTimeout(this.retxSyncInterest.bind(this), delay);
     }
 
     private async sendSyncInterest() {
@@ -142,5 +146,9 @@ export class Logic {
 
     public getSeqNo(nid: T.NodeID = this.m_id) {
         return this.m_vv.get(nid);
+    }
+
+    private jitter(percent: number) {
+        return (1 - percent / 100) + 2 * (percent / 100) * Math.random();
     }
 }
