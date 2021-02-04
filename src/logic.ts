@@ -9,6 +9,7 @@ export class Logic {
     private m_vv = new VersionVector();
     private m_syncRegisteredPrefix: Producer;
     private m_retxEvent: any = 0;
+    private m_nextSyncInterest: number = 0;
 
     constructor (
         private m_face: FwFace,
@@ -54,15 +55,21 @@ export class Logic {
         const mergeRes = this.mergeStateVector(vvOther);
 
         // Suppress if nothing new
-        if (!mergeRes.myVectorNew && !mergeRes.otherVectorNew)
+        if (!mergeRes.myVectorNew && !mergeRes.otherVectorNew) {
             this.retxSyncInterest(false);
+        }
 
-        // Send sync interest if other vector new
-        else if (mergeRes.otherVectorNew)
-            this.retxSyncInterest();
+        // Send sync interest if vectors different
+        else if (!false || mergeRes.otherVectorNew) {
+            const delay = 50 * this.jitter(10);
 
-        // Return reply if my vector is new
-        if (mergeRes.myVectorNew) {
+            if (performance.now() + delay < this.m_nextSyncInterest) {
+                this.retxSyncInterest(false, delay);
+            }
+        }
+
+        // Return reply if my vector is new (and ACK enabled)
+        if (false && mergeRes.myVectorNew) {
             const data = new Data(interest.name);
             data.content = this.m_vv.encodeToComponent().tlv;
             data.freshnessPeriod = 4000;
@@ -73,12 +80,21 @@ export class Logic {
     }
 
     private retxSyncInterest(send = true, delay = -1) {
-        if (send) this.sendSyncInterest();
+        // Send sync interest
+        if (send) {
+            this.sendSyncInterest();
+        }
+
+        // Heartbeat delay if not set
+        if (delay < 0) {
+            delay = 30000 * this.jitter(10);
+        }
+
+        // Store the scheduled time
+        this.m_nextSyncInterest = performance.now() + delay;
+
+        // Set new event
         clearTimeout(this.m_retxEvent);
-
-        if (delay < 0)
-            delay = 3000 * this.jitter(10);
-
         this.m_retxEvent = setTimeout(this.retxSyncInterest.bind(this), delay);
     }
 
