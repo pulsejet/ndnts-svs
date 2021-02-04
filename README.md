@@ -48,5 +48,5 @@ sock = new Socket({
 
 ## License
 
-ndn-svs is an open source project licensed under the LGPL version 2.1.
+ndnts-svs is an open source project licensed under the LGPL version 2.1.
 See [`COPYING.md`](COPYING.md) for more information.
