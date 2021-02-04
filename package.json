@@ -17,7 +17,7 @@
     "NDN"
   ],
   "author": "Varun Patil <radialapps@gmail.com>",
-  "license": "MIT",
+  "license": "LGPL-2.1",
   "bugs": {
     "url": "https://github.com/pulsejet/ndnts-svs/issues"
   },
