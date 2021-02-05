@@ -34,7 +34,8 @@ export class Socket {
 
         // Register data prefix
         this.opts.face.addRoute(this.m_dataPrefix);
-        this.m_registeredDataPrefix = this.m_endpoint.produce(this.m_dataPrefix, this.onDataInterest);
+        this.m_registeredDataPrefix = this.m_endpoint.produce(
+            new Name(this.m_dataPrefix).append(this.m_id), this.onDataInterest);
 
         // Terminate if the face closes
         this.opts.face.on("close", () => this.close());
