@@ -29,4 +29,6 @@ export interface SVSOptions {
     id: NodeID;
     /** Callback when new data is discovered */
     update: UpdateCallback;
+    /** Symmetric key for signing sync interests */
+    syncKey?: Uint8Array;
 }

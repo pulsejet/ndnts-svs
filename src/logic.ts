@@ -1,5 +1,6 @@
 import { Endpoint, Producer } from "@ndn/endpoint"
-import { Data, Interest } from "@ndn/packet";
+import { Interest, Verifier, Signer } from "@ndn/packet";
+import { createSigner, createVerifier, HMAC } from "@ndn/keychain";
 import { VersionVector } from "./version-vector";
 import * as T from './typings';
 
@@ -11,27 +12,44 @@ export class Logic {
     private m_retxEvent: any = 0;
     private m_nextSyncInterest: number = 0;
 
+    private m_syncKey?: Uint8Array;
+    private m_interestSigner?: Signer;
+    private m_interestVerifier?: Verifier;
+
     constructor (
         private opts: T.SVSOptions,
     ) {
         // Bind async functions
+        this.initialize = this.initialize.bind(this);
         this.onSyncInterest = this.onSyncInterest.bind(this);
         this.sendSyncInterest = this.sendSyncInterest.bind(this);
+        this.setSyncKey = this.setSyncKey.bind(this);
 
         // Initialize
         this.m_id = escape(opts.id);
         this.m_vv.set(this.m_id, 0);
         this.m_endpoint = opts.endpoint || new Endpoint({ fw: opts.face.fw });
+        this.m_syncKey = opts.syncKey;
 
         // Register sync prefix
         this.opts.face.addRoute(opts.prefix);
         this.m_syncRegisteredPrefix = this.m_endpoint.produce(opts.prefix, this.onSyncInterest);
 
-        // Start periodically send sync interest
-        this.retxSyncInterest();
-
         // Terminate if the face closes
         this.opts.face.on("close", () => this.close());
+
+        // Do async initialization
+        this.initialize();
+    }
+
+    public async initialize() {
+        // Setup interest security
+        if (this.m_syncKey) {
+            await this.setSyncKey(this.m_syncKey);
+        }
+
+        // Start periodically send sync interest
+        this.retxSyncInterest();
     }
 
     public close() {
@@ -44,6 +62,14 @@ export class Logic {
     }
 
     private async onSyncInterest(interest: Interest) {
+        // Verify incoming interest
+        try {
+            await this.m_interestVerifier?.verify(interest);
+        } catch {
+            return;
+        }
+
+        // Get encoded version vector
         const encodedVV = interest.name.get(-2)?.tlv as Uint8Array;
         if (!encodedVV) return;
 
@@ -89,13 +115,14 @@ export class Logic {
     }
 
     private async sendSyncInterest() {
-        const syncName = this.opts.prefix.append(this.m_vv.encodeToComponent())
-                                         .append('<signature>');
+        const syncName = this.opts.prefix.append(this.m_vv.encodeToComponent());
 
         const interest = new Interest(syncName);
         interest.canBePrefix = true;
         interest.mustBeFresh = true;
         interest.lifetime = 1000;
+
+        await this.m_interestSigner?.sign(interest);
 
         try {
             await this.m_endpoint.consume(interest);
@@ -135,6 +162,21 @@ export class Logic {
         }
 
         return { myVectorNew, otherVectorNew };
+    }
+
+    public async setSyncKey(key: Uint8Array) {
+        this.m_syncKey = key;
+
+        const sKey = await HMAC.cryptoGenerate({
+            importRaw: this.m_syncKey,
+        }, true);
+
+        this.m_interestSigner = createSigner(HMAC, sKey);
+        this.m_interestVerifier = createVerifier(HMAC, sKey);
+    }
+
+    public getSyncKey() {
+        return this.m_syncKey;
     }
 
     public updateSeqNo(seq: T.SeqNo, nid: T.NodeID = this.m_id): void {
