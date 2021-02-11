@@ -53,25 +53,17 @@ export class Logic {
         const mergeRes = this.mergeStateVector(vvOther);
 
         // Suppress if nothing new
-        if (!mergeRes.myVectorNew && !mergeRes.otherVectorNew) {
+        if (!mergeRes.myVectorNew) {
             this.retxSyncInterest(false);
         }
 
         // Send sync interest if vectors different
-        else if (!this.opts.enableAck || mergeRes.otherVectorNew) {
+        else {
             const delay = 50 * this.jitter(10);
 
             if (performance.now() + delay < this.m_nextSyncInterest) {
                 this.retxSyncInterest(false, delay);
             }
-        }
-
-        // Return reply if my vector is new (and ACK enabled)
-        if (this.opts.enableAck && mergeRes.myVectorNew) {
-            const data = new Data(interest.name);
-            data.content = this.m_vv.encodeToComponent().tlv;
-            data.freshnessPeriod = 4000;
-            return data;
         }
 
         return undefined;
@@ -105,16 +97,9 @@ export class Logic {
         interest.mustBeFresh = true;
         interest.lifetime = 1000;
 
-        let data: Data;
         try {
-            data = await this.m_endpoint.consume(interest);
-        } catch (err) {
-            return;
-        }
-
-        // Try decoding the received version vector
-        const newVV = VersionVector.from(data.content) as VersionVector;
-        if (newVV) this.mergeStateVector(newVV);
+            await this.m_endpoint.consume(interest);
+        } catch {}
     }
 
     private mergeStateVector(vvOther: VersionVector) {

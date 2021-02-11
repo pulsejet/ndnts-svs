@@ -29,6 +29,4 @@ export interface SVSOptions {
     id: NodeID;
     /** Callback when new data is discovered */
     update: UpdateCallback;
-    /** Enable sync ACK */
-    enableAck?: boolean;
 }
