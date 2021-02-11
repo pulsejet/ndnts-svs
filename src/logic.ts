@@ -44,7 +44,7 @@ export class Logic {
     }
 
     private async onSyncInterest(interest: Interest) {
-        const encodedVV = interest.name.get(-1)?.tlv as Uint8Array;
+        const encodedVV = interest.name.get(-2)?.tlv as Uint8Array;
         if (!encodedVV) return;
 
         const vvOther = VersionVector.from(encodedVV) as VersionVector;
@@ -97,7 +97,8 @@ export class Logic {
     }
 
     private async sendSyncInterest() {
-        const syncName = this.opts.prefix.append(this.m_vv.encodeToComponent());
+        const syncName = this.opts.prefix.append(this.m_vv.encodeToComponent())
+                                         .append('<signature>');
 
         const interest = new Interest(syncName);
         interest.canBePrefix = true;
