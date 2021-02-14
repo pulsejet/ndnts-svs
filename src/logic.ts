@@ -27,7 +27,6 @@ export class Logic {
 
         // Initialize
         this.m_id = escape(opts.id);
-        this.m_vv.set(this.m_id, 0);
         this.m_endpoint = opts.endpoint || new Endpoint({ fw: opts.face.fw });
         this.m_syncKey = opts.syncKey;
 
