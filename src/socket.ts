@@ -33,19 +33,19 @@ export class Socket {
         const syncPrefix = new Name(opts.prefix).append('s');
         this.m_dataPrefix = new Name(opts.prefix).append('d');
 
-        // Create Logic
-        this.m_logic = new Logic({
-            ...opts,
-            prefix: syncPrefix,
-            endpoint: this.m_endpoint,
-        });
-
         // Register data prefix
         this.opts.face.addRoute(this.m_dataPrefix);
         this.m_registeredDataPrefix = this.m_endpoint.produce(this.m_dataPrefix, this.onDataInterest);
 
         // Terminate if the face closes
         this.opts.face.on("close", () => this.close());
+
+        // Create Logic
+        this.m_logic = new Logic({
+            ...opts,
+            prefix: syncPrefix,
+            endpoint: this.m_endpoint,
+        });
     }
 
     public close() {
@@ -66,7 +66,7 @@ export class Socket {
         freshness: number,
         nid: T.NodeID = this.m_id,
         seqNo: T.SeqNo = -1,
-    ): Promise<void> {
+    ): Promise<Data> {
         const data = new Data();
         data.content = content;
         data.freshnessPeriod = freshness;
@@ -80,15 +80,16 @@ export class Socket {
 
         await this.m_dataStore.insert(data);
         this.m_logic.updateSeqNo(seqNo, nid);
+
+        return data;
     }
 
     public async fetchData(nid: T.NodeID, seqNo: T.SeqNo) {
         const interestName = new Name(this.m_dataPrefix)
                             .append(nid)
                             .append(this.getNNIComponent(seqNo))
-        const interest = new Interest(interestName, Interest.MustBeFresh);
 
-        const data = await this.m_endpoint.consume(interest);
+        const data = await this.m_endpoint.consume(interestName);
 
         if (this.opts.cacheAll) {
             this.m_dataStore.insert(data);
