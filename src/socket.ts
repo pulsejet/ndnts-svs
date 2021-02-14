@@ -38,7 +38,7 @@ export class Socket {
         this.m_registeredDataPrefix = this.m_endpoint.produce(this.m_dataPrefix, this.onDataInterest);
 
         // Terminate if the face closes
-        this.opts.face.on("close", () => this.close());
+        this.opts.face.on("close", this.close);
 
         // Create Logic
         this.m_logic = new Logic({
@@ -54,6 +54,7 @@ export class Socket {
 
         if (this.opts.face.running) {
             this.opts.face.removeRoute(this.m_dataPrefix);
+            this.opts.face.removeListener("close", this.close)
         }
     }
 

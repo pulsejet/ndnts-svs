@@ -36,7 +36,7 @@ export class Logic {
         this.m_syncRegisteredPrefix = this.m_endpoint.produce(opts.prefix, this.onSyncInterest);
 
         // Terminate if the face closes
-        this.opts.face.on("close", () => this.close());
+        this.opts.face.on("close", this.close);
 
         // Do async initialization
         this.initialize();
@@ -58,6 +58,7 @@ export class Logic {
 
         if (this.opts.face.running) {
             this.opts.face.removeRoute(this.opts.prefix);
+            this.opts.face.removeListener("close", this.close);
         }
     }
 
