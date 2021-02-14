@@ -2,25 +2,32 @@ import { Endpoint, Producer } from "@ndn/endpoint";
 import { TT, Component, Data, Interest, Name } from "@ndn/packet";
 import { Encoder, NNI } from "@ndn/tlv";
 import { Logic } from "./logic";
+import { MemoryDataStore } from "./store-memory";
 import * as T from './typings';
 
+// Export types again
+export { DataStore, SVSOptions } from './typings';
+
 export class Socket {
-    private m_endpoint: Endpoint;
-    private m_id: T.NodeID;
-    private m_dataPrefix: Name;
-    private m_registeredDataPrefix: Producer;
-    private m_ims: { [key: string]: Data; } = {};
-    private m_logic: Logic;
+    private readonly m_endpoint: Endpoint;
+    private readonly m_dataPrefix: Name;
+    private readonly m_registeredDataPrefix: Producer;
+    public readonly m_id: T.NodeID;
+    public readonly m_dataStore: T.DataStore;
+    public readonly m_logic: Logic;
 
     constructor(
         private opts: T.SVSOptions,
     ) {
         // Bind async functions
         this.onDataInterest = this.onDataInterest.bind(this);
+        this.publishData = this.publishData.bind(this);
+        this.fetchData = this.fetchData.bind(this);
 
         // Initialize
         this.m_id = escape(opts.id);
         this.m_endpoint = opts.endpoint || new Endpoint({ fw: opts.face.fw });
+        this.m_dataStore = opts.dataStore || new MemoryDataStore();
 
         const syncPrefix = new Name(opts.prefix).append('s');
         this.m_dataPrefix = new Name(opts.prefix).append('d');
@@ -50,15 +57,15 @@ export class Socket {
     }
 
     private async onDataInterest(interest: Interest) {
-        return this.m_ims[interest.name.toString()] || undefined;
+        return await this.m_dataStore.find(interest);
     }
 
-    public publishData(
+    public async publishData(
         content: Uint8Array,
         freshness: number,
         nid: T.NodeID = this.m_id,
         seqNo: T.SeqNo = -1,
-    ): void {
+    ): Promise<void> {
         const data = new Data();
         data.content = content;
         data.freshnessPeriod = freshness;
@@ -70,25 +77,28 @@ export class Socket {
                     .append(nid)
                     .append(this.getNNIComponent(seqNo));
 
-        this.m_ims[data.name.toString()] = data;
+        await this.m_dataStore.insert(data);
         this.m_logic.updateSeqNo(seqNo, nid);
     }
 
-    public fetchData(nid: T.NodeID, seqNo: T.SeqNo) {
+    public async fetchData(nid: T.NodeID, seqNo: T.SeqNo) {
         const interestName = new Name(this.m_dataPrefix)
                             .append(nid)
                             .append(this.getNNIComponent(seqNo))
         const interest = new Interest(interestName, Interest.MustBeFresh);
-        return this.m_endpoint.consume(interest);
+
+        const data = await this.m_endpoint.consume(interest);
+
+        if (this.opts.cacheAll) {
+            this.m_dataStore.insert(data);
+        }
+
+        return data;
     }
 
     private getNNIComponent(num: number) {
         let encoder = new Encoder();
         encoder.encode(NNI(num));
         return new Component(TT.GenericNameComponent, encoder.output);
-    }
-
-    public getLogic() {
-        return this.m_logic;
     }
 }

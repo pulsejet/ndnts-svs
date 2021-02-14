@@ -1,3 +1,4 @@
+import { Data, Interest } from "@ndn/packet";
 import { Endpoint } from "@ndn/endpoint";
 import { FwFace } from "@ndn/fw";
 import { Name } from "@ndn/packet";
@@ -17,6 +18,13 @@ export type MissingDataInfo = {
 /** Callback when new data is discovered */
 export type UpdateCallback = (info: MissingDataInfo[]) => void;
 
+export interface DataStore {
+    /** Insert a data packet into the store */
+    insert: (data: Data) => Promise<void>;
+    /** Get a data packet from the store */
+    find: (interest: Interest) => Promise<Data | undefined>;
+}
+
 /** Options for SVS socket/logic */
 export interface SVSOptions {
     /** FwFace to use for sync/data */
@@ -31,4 +39,8 @@ export interface SVSOptions {
     update: UpdateCallback;
     /** Symmetric key for signing sync interests */
     syncKey?: Uint8Array;
+    /** Store for data packets */
+    dataStore?: DataStore;
+    /** Cache data from all nodes */
+    cacheAll?: boolean;
 }

@@ -5,10 +5,10 @@ import { VersionVector } from "./version-vector";
 import * as T from './typings';
 
 export class Logic {
-    private m_endpoint: Endpoint;
-    private m_id: T.NodeID;
-    private m_vv = new VersionVector();
-    private m_syncRegisteredPrefix: Producer;
+    private readonly m_endpoint: Endpoint;
+    public readonly m_id: T.NodeID;
+    public readonly m_vv = new VersionVector();
+    private readonly m_syncRegisteredPrefix: Producer;
     private m_retxEvent: any = 0;
     private m_nextSyncInterest: number = 0;
 
