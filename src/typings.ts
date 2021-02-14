@@ -2,6 +2,7 @@ import { Data, Interest } from "@ndn/packet";
 import { Endpoint } from "@ndn/endpoint";
 import { FwFace } from "@ndn/fw";
 import { Name } from "@ndn/packet";
+import { VersionVector } from "./version-vector";
 
 export type NodeID = string;
 export type SeqNo = number;
@@ -43,4 +44,6 @@ export interface SVSOptions {
     dataStore?: DataStore;
     /** Cache data from all nodes */
     cacheAll?: boolean;
+    /** Initial version vector to start with */
+    initialVersionVector?: VersionVector;
 }

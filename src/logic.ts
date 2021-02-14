@@ -7,7 +7,7 @@ import * as T from './typings';
 export class Logic {
     private readonly m_endpoint: Endpoint;
     public readonly m_id: T.NodeID;
-    public readonly m_vv = new VersionVector();
+    public readonly m_vv: VersionVector;
     private readonly m_syncRegisteredPrefix: Producer;
     private m_retxEvent: any = 0;
     private m_nextSyncInterest: number = 0;
@@ -29,6 +29,7 @@ export class Logic {
         this.m_id = escape(opts.id);
         this.m_endpoint = opts.endpoint || new Endpoint({ fw: opts.face.fw });
         this.m_syncKey = opts.syncKey;
+        this.m_vv = opts.initialVersionVector || new VersionVector();
 
         // Register sync prefix
         this.opts.face.addRoute(opts.prefix);

@@ -7,6 +7,7 @@ import * as T from './typings';
 
 // Export types again
 export { DataStore, SVSOptions } from './typings';
+export { VersionVector } from './version-vector';
 
 export class Socket {
     private readonly m_endpoint: Endpoint;
