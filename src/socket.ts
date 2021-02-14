@@ -53,20 +53,25 @@ export class Socket {
         return this.m_ims[interest.name.toString()] || undefined;
     }
 
-    public publishData(content: Uint8Array, freshness: number, seqNo: T.SeqNo = -1): void {
+    public publishData(
+        content: Uint8Array,
+        freshness: number,
+        nid: T.NodeID = this.m_id,
+        seqNo: T.SeqNo = -1,
+    ): void {
         const data = new Data();
         data.content = content;
         data.freshnessPeriod = freshness;
 
         if (seqNo < 0)
-            seqNo = this.m_logic.getSeqNo(this.m_id) + 1;
+            seqNo = this.m_logic.getSeqNo(nid) + 1;
 
         data.name = new Name(this.m_dataPrefix)
-                    .append(this.m_id)
+                    .append(nid)
                     .append(this.getNNIComponent(seqNo));
 
         this.m_ims[data.name.toString()] = data;
-        this.m_logic.updateSeqNo(seqNo, this.m_id);
+        this.m_logic.updateSeqNo(seqNo, nid);
     }
 
     public fetchData(nid: T.NodeID, seqNo: T.SeqNo) {
