@@ -33,17 +33,13 @@ export interface SVSOptions {
     /** Endpoint to use for sync/data */
     endpoint?: Endpoint;
     /** Sync group prefix */
-    prefix: Name;
-    /** Node ID */
-    id: NodeID;
+    syncPrefix: Name;
     /** Callback when new data is discovered */
     update: UpdateCallback;
     /** Symmetric key for signing sync interests */
     syncKey?: Uint8Array;
     /** Store for data packets */
     dataStore?: DataStore;
-    /** Cache data from all nodes */
-    cacheAll?: boolean;
     /** Initial version vector to start with */
     initialVersionVector?: VersionVector;
 }

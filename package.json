@@ -2,8 +2,8 @@
   "name": "ndnts-svs",
   "version": "1.0.0",
   "description": "SVS library based on NDNts",
-  "main": "dist/socket.js",
-  "types": "dist/socket.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",

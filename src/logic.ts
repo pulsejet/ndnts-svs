@@ -1,8 +1,13 @@
 import { Endpoint, Producer } from "@ndn/endpoint"
-import { Interest, Verifier, Signer } from "@ndn/packet";
+import { Interest, Verifier, Signer, Name } from "@ndn/packet";
 import { createSigner, createVerifier, HMAC } from "@ndn/keychain";
 import { VersionVector } from "./version-vector";
 import * as T from './typings';
+
+export interface LogicOptions extends T.SVSOptions {
+    dataPrefix: Name;
+    id: T.NodeID;
+}
 
 export class Logic {
     private readonly m_endpoint: Endpoint;
@@ -17,7 +22,7 @@ export class Logic {
     private m_interestVerifier?: Verifier;
 
     constructor (
-        private opts: T.SVSOptions,
+        private opts: LogicOptions,
     ) {
         // Bind async functions
         this.initialize = this.initialize.bind(this);
@@ -32,8 +37,8 @@ export class Logic {
         this.m_vv = opts.initialVersionVector || new VersionVector();
 
         // Register sync prefix
-        this.opts.face.addRoute(opts.prefix);
-        this.m_syncRegisteredPrefix = this.m_endpoint.produce(opts.prefix, this.onSyncInterest);
+        this.opts.face.addRoute(opts.syncPrefix);
+        this.m_syncRegisteredPrefix = this.m_endpoint.produce(opts.syncPrefix, this.onSyncInterest);
 
         // Terminate if the face closes
         this.opts.face.on("close", this.close);
@@ -57,7 +62,7 @@ export class Logic {
         clearTimeout(this.m_retxEvent);
 
         if (this.opts.face.running) {
-            this.opts.face.removeRoute(this.opts.prefix);
+            this.opts.face.removeRoute(this.opts.syncPrefix);
             this.opts.face.removeListener("close", this.close);
         }
     }
@@ -116,7 +121,7 @@ export class Logic {
     }
 
     private async sendSyncInterest() {
-        const syncName = this.opts.prefix.append(this.m_vv.encodeToComponent());
+        const syncName = this.opts.syncPrefix.append(this.m_vv.encodeToComponent());
 
         const interest = new Interest(syncName);
         interest.canBePrefix = true;
