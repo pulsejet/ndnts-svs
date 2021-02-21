@@ -10,7 +10,7 @@ export interface SocketSharedOptions extends T.SVSOptions {
 
 export class SocketShared extends SocketBase {
     constructor(
-        private s_opts: SocketSharedOptions,
+        private readonly s_opts: SocketSharedOptions,
     ) {
         super(s_opts);
     }

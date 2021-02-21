@@ -22,7 +22,7 @@ export class Logic {
     private m_interestVerifier?: Verifier;
 
     constructor (
-        private opts: LogicOptions,
+        private readonly opts: LogicOptions,
     ) {
         // Bind async functions
         this.initialize = this.initialize.bind(this);

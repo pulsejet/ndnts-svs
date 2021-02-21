@@ -8,7 +8,7 @@ export interface SocketOptions extends T.SVSOptions {
 
 export class Socket extends SocketBase {
     constructor(
-        s_opts: SocketOptions,
+        readonly s_opts: SocketOptions,
     ) {
         super({
             ... s_opts,

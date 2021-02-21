@@ -29,17 +29,17 @@ export interface DataStore {
 /** Options for SVS socket/logic */
 export interface SVSOptions {
     /** FwFace to use for sync/data */
-    face: FwFace;
+    readonly face: FwFace;
     /** Endpoint to use for sync/data */
-    endpoint?: Endpoint;
+    readonly endpoint?: Endpoint;
     /** Sync group prefix */
-    syncPrefix: Name;
+    readonly syncPrefix: Name;
     /** Callback when new data is discovered */
-    update: UpdateCallback;
+    readonly update: UpdateCallback;
     /** Symmetric key for signing sync interests */
-    syncKey?: Uint8Array;
+    readonly syncKey?: Uint8Array;
     /** Store for data packets */
-    dataStore?: DataStore;
+    readonly dataStore?: DataStore;
     /** Initial version vector to start with */
-    initialVersionVector?: VersionVector;
+    readonly initialVersionVector?: VersionVector;
 }
