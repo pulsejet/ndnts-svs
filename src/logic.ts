@@ -20,6 +20,7 @@ export class Logic {
     private m_syncKey?: Uint8Array;
     private m_interestSigner?: Signer;
     private m_interestVerifier?: Verifier;
+    private m_recordedVv?: VersionVector;
 
     constructor (
         private readonly opts: LogicOptions,
@@ -87,6 +88,8 @@ export class Logic {
 
         const mergeRes = this.mergeStateVector(vvOther);
 
+        if (this.recordVector(vvOther)) return undefined
+
         // Suppress if nothing new
         if (!mergeRes.myVectorNew) {
             this.retxSyncInterest(false);
@@ -94,6 +97,8 @@ export class Logic {
 
         // Send sync interest if vectors different
         else {
+            this.enterSuppressionState(vvOther);
+
             const delay = 50 * this.jitter(10);
 
             if (performance.now() + delay < this.m_nextSyncInterest) {
@@ -107,7 +112,10 @@ export class Logic {
     private retxSyncInterest(send = true, delay = -1) {
         // Send sync interest
         if (send) {
-            this.sendSyncInterest();
+            if (!this.m_recordedVv || this.mergeStateVector(this.m_recordedVv).myVectorNew) {
+                this.sendSyncInterest();
+            }
+            this.m_recordedVv = undefined;
         }
 
         // Heartbeat delay if not set
@@ -173,6 +181,25 @@ export class Logic {
         return { myVectorNew, otherVectorNew };
     }
 
+    private recordVector(vvOther: VersionVector): boolean {
+        if (!this.m_recordedVv) return false;
+
+        for (const nidOther of vvOther.getNodes()) {
+          const seqOther = vvOther.get(nidOther);
+          const seqCurrent = this.m_recordedVv.get(nidOther);
+
+          if (seqCurrent < seqOther) {
+            this.m_recordedVv.set(nidOther, seqOther);
+          }
+        }
+
+        return true;
+    }
+
+    private enterSuppressionState(vvOther: VersionVector): void {
+        this.m_recordedVv ||= vvOther;
+    }
+
     public getSyncKey() {
         return this.m_syncKey;
     }
@@ -182,7 +209,7 @@ export class Logic {
         this.m_vv.set(nid, seq);
 
         if (seq > prev)
-            this.sendSyncInterest();
+            this.retxSyncInterest();
     }
 
     public getSeqNo(nid: T.NodeID = this.m_id) {
