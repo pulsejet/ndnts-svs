@@ -36,10 +36,17 @@ export interface SVSOptions {
     readonly syncPrefix: Name;
     /** Callback when new data is discovered */
     readonly update: UpdateCallback;
-    /** Symmetric key for signing sync interests */
-    readonly syncKey?: Uint8Array;
+    /** Signing and validation options */
+    readonly security?: SecurityOptions;
     /** Store for data packets */
     readonly dataStore?: DataStore;
     /** Initial version vector to start with */
     readonly initialVersionVector?: VersionVector;
+}
+
+export interface SecurityOptions {
+    /** Type of signature on interests */
+    readonly interestSignatureType?: "NONE" | "HMAC";
+    /** HMAC key to use for signing interests */
+    readonly hmacKey?: Uint8Array;
 }

@@ -28,12 +28,10 @@ export class Logic {
         this.initialize = this.initialize.bind(this);
         this.onSyncInterest = this.onSyncInterest.bind(this);
         this.sendSyncInterest = this.sendSyncInterest.bind(this);
-        this.setSyncKey = this.setSyncKey.bind(this);
 
         // Initialize
         this.m_id = escape(opts.id);
         this.m_endpoint = opts.endpoint || new Endpoint({ fw: opts.face.fw });
-        this.m_syncKey = opts.syncKey;
         this.m_vv = opts.initialVersionVector || new VersionVector();
 
         // Register sync prefix
@@ -49,8 +47,13 @@ export class Logic {
 
     public async initialize() {
         // Setup interest security
-        if (this.m_syncKey) {
-            await this.setSyncKey(this.m_syncKey);
+        if (this.opts.security?.interestSignatureType == "HMAC") {
+            const sKey = await HMAC.cryptoGenerate({
+                importRaw: this.opts.security.hmacKey ?? new Uint8Array(),
+            }, true);
+
+            this.m_interestSigner = createSigner(HMAC, sKey);
+            this.m_interestVerifier = createVerifier(HMAC, sKey);
         }
 
         // Start periodically send sync interest
@@ -168,17 +171,6 @@ export class Logic {
         }
 
         return { myVectorNew, otherVectorNew };
-    }
-
-    public async setSyncKey(key: Uint8Array) {
-        this.m_syncKey = key;
-
-        const sKey = await HMAC.cryptoGenerate({
-            importRaw: this.m_syncKey,
-        }, true);
-
-        this.m_interestSigner = createSigner(HMAC, sKey);
-        this.m_interestVerifier = createVerifier(HMAC, sKey);
     }
 
     public getSyncKey() {
