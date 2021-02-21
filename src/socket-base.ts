@@ -17,7 +17,8 @@ export abstract class SocketBase {
     public readonly m_dataStore: T.DataStore;
     public readonly m_logic: Logic;
 
-    abstract getDataName(nid: T.NodeID, seqNo: T.SeqNo): Name;
+    protected abstract getDataName(nid: T.NodeID, seqNo: T.SeqNo): Name;
+    protected abstract shouldCache(data: Data): boolean;
 
     constructor(
         protected readonly opts: SocketBaseOptions,
@@ -86,10 +87,9 @@ export abstract class SocketBase {
         const interestName = this.getDataName(nid, seqNo);
         const data = await this.m_endpoint.consume(interestName);
 
-        // TODO: FUNC
-        //if (this.opts.cacheAll) {
-            //this.m_dataStore.insert(data);
-        //}
+        if (this.shouldCache(data)) {
+            this.m_dataStore.insert(data);
+        }
 
         return data;
     }

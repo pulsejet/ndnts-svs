@@ -1,4 +1,4 @@
-import { Name, AltUri } from "@ndn/packet";
+import { Name, Data, AltUri } from "@ndn/packet";
 import { SocketBase } from "./socket-base";
 import * as T from './typings';
 
@@ -17,8 +17,12 @@ export class Socket extends SocketBase {
         });
     }
 
-    getDataName(nid: T.NodeID, seqNo: T.SeqNo) {
+    protected getDataName(nid: T.NodeID, seqNo: T.SeqNo) {
       return new Name(nid).append(...this.opts.syncPrefix.comps)
                           .append(this.getNNIComponent(seqNo));
+    }
+
+    protected shouldCache(data: Data): boolean {
+        return false;
     }
 }
