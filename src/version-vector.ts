@@ -7,7 +7,7 @@ const TTVersionVectorKey = 202;
 const TTVersionVectorValue = 203;
 
 export class VersionVector {
-    private m_map: { [key: string]: T.SeqNo; } = {};
+    private readonly m_map: { [key: string]: T.SeqNo; } = {};
 
     /** Set value of node */
     public set(nid: T.NodeID, seqNo: T.SeqNo) {
