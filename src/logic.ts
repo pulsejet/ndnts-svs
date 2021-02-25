@@ -25,11 +25,6 @@ export class Logic {
     constructor (
         private readonly opts: LogicOptions,
     ) {
-        // Bind async functions
-        this.initialize = this.initialize.bind(this);
-        this.onSyncInterest = this.onSyncInterest.bind(this);
-        this.sendSyncInterest = this.sendSyncInterest.bind(this);
-
         // Initialize
         this.m_id = escape(opts.id);
         this.m_endpoint = opts.endpoint || new Endpoint({ fw: opts.face.fw });
@@ -46,7 +41,7 @@ export class Logic {
         this.initialize();
     }
 
-    public async initialize() {
+    public initialize = async () => {
         // Setup interest security
         if (this.opts.security?.interestSignatureType == "HMAC") {
             const sKey = await HMAC.cryptoGenerate({
@@ -71,7 +66,7 @@ export class Logic {
         }
     }
 
-    private async onSyncInterest(interest: Interest) {
+    private onSyncInterest = async (interest: Interest) => {
         // Verify incoming interest
         try {
             await this.m_interestVerifier?.verify(interest);
@@ -131,7 +126,7 @@ export class Logic {
         this.m_retxEvent = setTimeout(this.retxSyncInterest.bind(this), delay);
     }
 
-    private async sendSyncInterest() {
+    private sendSyncInterest = async () => {
         const syncName = this.opts.syncPrefix.append(this.m_vv.encodeToComponent());
 
         const interest = new Interest(syncName);

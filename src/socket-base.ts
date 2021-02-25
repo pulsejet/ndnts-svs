@@ -23,11 +23,6 @@ export abstract class SocketBase {
     constructor(
         protected readonly opts: SocketBaseOptions,
     ) {
-        // Bind async functions
-        this.onDataInterest = this.onDataInterest.bind(this);
-        this.publishData = this.publishData.bind(this);
-        this.fetchData = this.fetchData.bind(this);
-
         // Initialize
         this.m_id = escape(opts.id);
         this.m_endpoint = opts.endpoint || new Endpoint({ fw: opts.face.fw });
@@ -58,16 +53,16 @@ export abstract class SocketBase {
         }
     }
 
-    private async onDataInterest(interest: Interest) {
+    private onDataInterest = async (interest: Interest) => {
         return await this.m_dataStore.find(interest);
     }
 
-    public async publishData(
+    public publishData = async (
         content: Uint8Array,
         freshness: number,
         nid: T.NodeID = this.m_id,
         seqNo: T.SeqNo = -1,
-    ): Promise<Data> {
+    ): Promise<Data> => {
         const data = new Data();
         data.content = content;
         data.freshnessPeriod = freshness;
@@ -83,7 +78,7 @@ export abstract class SocketBase {
         return data;
     }
 
-    public async fetchData(nid: T.NodeID, seqNo: T.SeqNo) {
+    public fetchData = async (nid: T.NodeID, seqNo: T.SeqNo) => {
         const interestName = this.getDataName(nid, seqNo);
         const data = await this.m_endpoint.consume(interestName);
 
