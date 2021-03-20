@@ -10,16 +10,16 @@ Note: the library uses the nightly package of NDNts
 npm install ndnts-svs
 ```
 
-To create a new SVS socket
+To create a new SVS instance
 
 ```typescript
-import { Socket } from 'ndnts-svs';
+import { SVSync } from 'ndnts-svs';
 import { Name } from '@ndn/packet';
 
 const prefix = new Name('/ndn/svs');
 const nodeId = 'alice';
 
-let sock: Socket;
+let sync: SVSync;
 
 // Missing data callback
 const updateCallback = (missingData) => {
@@ -27,7 +27,7 @@ const updateCallback = (missingData) => {
     for (const m of missingData) {
         // Fetch all new data
         for (let i = m.low; i <= m.high; i++) {
-            sock.fetchData(m.session, i).then((data) => {
+            sync.fetchData(m.session, i).then((data) => {
                 const msg = new TextDecoder().decode(data.content);
                 console.log(`${m.session} => ${msg}`);
             }).catch((err) => {
@@ -37,8 +37,8 @@ const updateCallback = (missingData) => {
     }
 };
 
-// Start SVS socket
-sock = new Socket({
+// Start SVS instance
+sync = new SVSync({
     face: face,
     prefix: prefix,
     id: nodeId,

@@ -26,7 +26,7 @@ export interface DataStore {
     find: (interest: Interest) => Promise<Data | undefined>;
 }
 
-/** Options for SVS socket/logic */
+/** Options for SVS svsync/core */
 export interface SVSOptions {
     /** FwFace to use for sync/data */
     readonly face: FwFace;

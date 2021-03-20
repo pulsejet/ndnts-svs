@@ -1,27 +1,27 @@
 import { Endpoint, Producer } from "@ndn/endpoint";
 import { TT, Component, Data, Interest, Name } from "@ndn/packet";
 import { Encoder, NNI } from "@ndn/tlv";
-import { Logic } from "./logic";
+import { SVSyncCore } from "./core";
 import { MemoryDataStore } from "./store-memory";
 import * as T from './typings';
 
-export interface SocketBaseOptions extends T.SVSOptions {
+export interface SVSyncBaseOptions extends T.SVSOptions {
     dataPrefix: Name;
     id: T.NodeID;
 }
 
-export abstract class SocketBase {
+export abstract class SVSyncBase {
     private readonly m_endpoint: Endpoint;
     private readonly m_registeredDataPrefix: Producer;
     public readonly m_id: T.NodeID;
     public readonly m_dataStore: T.DataStore;
-    public readonly m_logic: Logic;
+    public readonly m_core: SVSyncCore;
 
     protected abstract getDataName(nid: T.NodeID, seqNo: T.SeqNo): Name;
     protected abstract shouldCache(data: Data): boolean;
 
     constructor(
-        protected readonly opts: SocketBaseOptions,
+        protected readonly opts: SVSyncBaseOptions,
     ) {
         // Initialize
         this.m_id = escape(opts.id);
@@ -35,8 +35,8 @@ export abstract class SocketBase {
         // Terminate if the face closes
         this.opts.face.on("close", this.close);
 
-        // Create Logic
-        this.m_logic = new Logic({
+        // Create core
+        this.m_core = new SVSyncCore({
             ...opts,
             syncPrefix: opts.syncPrefix,
             endpoint: this.m_endpoint,
@@ -45,7 +45,7 @@ export abstract class SocketBase {
 
     public close() {
         this.m_registeredDataPrefix.close();
-        this.m_logic.close();
+        this.m_core.close();
 
         if (this.opts.face.running) {
             this.opts.face.removeRoute(this.opts.dataPrefix);
@@ -68,12 +68,12 @@ export abstract class SocketBase {
         data.freshnessPeriod = freshness;
 
         if (seqNo < 0)
-            seqNo = this.m_logic.getSeqNo(nid) + 1;
+            seqNo = this.m_core.getSeqNo(nid) + 1;
 
         data.name = this.getDataName(nid, seqNo);
 
         await this.m_dataStore.insert(data);
-        this.m_logic.updateSeqNo(seqNo, nid);
+        this.m_core.updateSeqNo(seqNo, nid);
 
         return data;
     }

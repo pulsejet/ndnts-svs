@@ -4,12 +4,12 @@ import { createSigner, createVerifier, HMAC } from "@ndn/keychain";
 import { VersionVector } from "./version-vector";
 import * as T from './typings';
 
-export interface LogicOptions extends T.SVSOptions {
+export interface CoreOptions extends T.SVSOptions {
     dataPrefix: Name;
     id: T.NodeID;
 }
 
-export class Logic {
+export class SVSyncCore {
     private readonly m_endpoint: Endpoint;
     public readonly m_id: T.NodeID;
     public readonly m_vv: VersionVector;
@@ -23,7 +23,7 @@ export class Logic {
     private m_recordedVv?: VersionVector;
 
     constructor (
-        private readonly opts: LogicOptions,
+        private readonly opts: CoreOptions,
     ) {
         // Initialize
         this.m_id = escape(opts.id);

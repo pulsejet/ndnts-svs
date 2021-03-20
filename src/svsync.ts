@@ -1,14 +1,14 @@
 import { Name, Data, AltUri } from "@ndn/packet";
-import { SocketBase } from "./socket-base";
+import { SVSyncBase } from "./svsync-base";
 import * as T from './typings';
 
-export interface SocketOptions extends T.SVSOptions {
+export interface SVSyncOptions extends T.SVSOptions {
     dataPrefix: Name;
 }
 
-export class Socket extends SocketBase {
+export class SVSync extends SVSyncBase {
     constructor(
-        readonly s_opts: SocketOptions,
+        readonly s_opts: SVSyncOptions,
     ) {
         super({
             ... s_opts,
