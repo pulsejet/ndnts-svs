@@ -1,6 +1,6 @@
 # NDNts-SVS
 
-StateVectorSync library based on NDNts.
+[State Vector Sync (SVS)](https://named-data.github.io/StateVectorSync/) library for the browser with NDNts.
 
 ## Usage
 
