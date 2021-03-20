@@ -1,4 +1,4 @@
-import { Data, Interest } from "@ndn/packet";
+import { Data, Interest, Verifier, Signer } from "@ndn/packet";
 import { Endpoint } from "@ndn/endpoint";
 import { FwFace } from "@ndn/fw";
 import { Name } from "@ndn/packet";
@@ -45,8 +45,8 @@ export interface SVSOptions {
 }
 
 export interface SecurityOptions {
-    /** Type of signature on interests */
-    readonly interestSignatureType?: "NONE" | "HMAC";
-    /** HMAC key to use for signing interests */
-    readonly hmacKey?: Uint8Array;
+    /** Signer for sync interests */
+    readonly syncInterestSigner?: Signer;
+    /** Verifier for sync interests */
+    readonly syncInterestVerifier?: Verifier;
 }

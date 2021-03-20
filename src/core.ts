@@ -1,6 +1,5 @@
 import { Endpoint, Producer } from "@ndn/endpoint"
-import { Interest, Verifier, Signer, Name } from "@ndn/packet";
-import { createSigner, createVerifier, HMAC } from "@ndn/keychain";
+import { Interest, Name } from "@ndn/packet";
 import { VersionVector } from "./version-vector";
 import * as T from './typings';
 
@@ -17,9 +16,6 @@ export class SVSyncCore {
     private m_retxEvent: any = 0;
     private m_nextSyncInterest: number = 0;
 
-    private m_syncKey?: Uint8Array;
-    private m_interestSigner?: Signer;
-    private m_interestVerifier?: Verifier;
     private m_recordedVv?: VersionVector;
 
     constructor (
@@ -36,21 +32,6 @@ export class SVSyncCore {
 
         // Terminate if the face closes
         this.opts.face.on("close", this.close);
-
-        // Do async initialization
-        this.initialize();
-    }
-
-    public initialize = async () => {
-        // Setup interest security
-        if (this.opts.security?.interestSignatureType == "HMAC") {
-            const sKey = await HMAC.cryptoGenerate({
-                importRaw: this.opts.security.hmacKey ?? new Uint8Array(),
-            }, true);
-
-            this.m_interestSigner = createSigner(HMAC, sKey);
-            this.m_interestVerifier = createVerifier(HMAC, sKey);
-        }
 
         // Start periodically send sync interest
         this.retxSyncInterest();
@@ -69,7 +50,7 @@ export class SVSyncCore {
     private onSyncInterest = async (interest: Interest) => {
         // Verify incoming interest
         try {
-            await this.m_interestVerifier?.verify(interest);
+            await this.opts.security?.syncInterestVerifier?.verify(interest);
         } catch {
             return;
         }
@@ -134,7 +115,11 @@ export class SVSyncCore {
         interest.mustBeFresh = true;
         interest.lifetime = 1000;
 
-        await this.m_interestSigner?.sign(interest);
+        if (this.opts.security?.syncInterestSigner) {
+            await this.opts.security?.syncInterestSigner?.sign(interest);
+        } else {
+            interest.name = syncName.append('unsigned');
+        }
 
         try {
             await this.m_endpoint.consume(interest);
@@ -193,10 +178,6 @@ export class SVSyncCore {
 
     private enterSuppressionState(vvOther: VersionVector): void {
         this.m_recordedVv ||= vvOther;
-    }
-
-    public getSyncKey() {
-        return this.m_syncKey;
     }
 
     public updateSeqNo(seq: T.SeqNo, nid: T.NodeID = this.m_id): void {

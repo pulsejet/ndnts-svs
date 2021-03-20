@@ -15,9 +15,11 @@ To create a new SVS instance
 ```typescript
 import { SVSync } from 'ndnts-svs';
 import { Name } from '@ndn/packet';
+import { createSigner, createVerifier, HMAC } from "@ndn/keychain";
 
 const prefix = new Name('/ndn/svs');
 const nodeId = 'alice';
+const secret = 'confidential';
 
 let sync: SVSync;
 
@@ -37,12 +39,20 @@ const updateCallback = (missingData) => {
     }
 };
 
+const symKey = await HMAC.cryptoGenerate({
+    importRaw: new TextEncoder().encode(secret),
+}, true);
+
 // Start SVS instance
 sync = new SVSync({
     face: face,
     prefix: prefix,
     id: nodeId,
     update: updateCallback,
+    security: {
+        syncInterestSigner: createSigner(HMAC, symKey),
+        syncInterestVerifier: createVerifier(HMAC, symKey),
+    },
 });
 ```
 
