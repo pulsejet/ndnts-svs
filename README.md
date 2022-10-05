@@ -1,3 +1,7 @@
+# [DEPRECATED] Use the `@ndn/sync` implementation
+
+Please use the NDNts SVS implementation in the `@ndn/sync` package instead (found [here](https://github.com/yoursunny/NDNts/tree/main/packages/sync)).
+
 # NDNts-SVS
 
 [State Vector Sync (SVS)](https://named-data.github.io/StateVectorSync/) library for the browser with NDNts.
